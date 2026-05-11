@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target } from "lucide-react";
+import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target, LogOut } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { Welcome } from "@/components/Welcome";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -14,8 +17,29 @@ export const Route = createFileRoute("/")({
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700&display=swap" },
     ],
   }),
-  component: GlintApp,
+  component: RouteComponent,
 });
+
+function RouteComponent() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      setReady(true);
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setReady(true);
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  if (!ready) return <div className="min-h-screen bg-background" />;
+  if (!session) return <Welcome />;
+  return <GlintApp />;
+}
 
 type Verdict = "green" | "yellow" | "red";
 type Mood = "energy" | "heavy" | "nutrient" | "comfort" | "light";
@@ -200,6 +224,13 @@ function GlintApp() {
             <option value="fat loss">🔥 Fat loss</option>
             <option value="energy">⚡ Energy</option>
           </select>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       </header>
 
