@@ -224,6 +224,13 @@ function GlintApp() {
             <option value="fat loss">🔥 Fat loss</option>
             <option value="energy">⚡ Energy</option>
           </select>
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       </header>
 
