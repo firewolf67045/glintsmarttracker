@@ -72,14 +72,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Glint" },
+      { name: "description", content: "Snap a pic of your meal, and Glint tells you what's good, what's not, and what to eat next — like a food coach who doesn't judge your midnight snack." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Glint" },
+      { property: "og:description", content: "Snap a pic of your meal, and Glint tells you what's good, what's not, and what to eat next — like a food coach who doesn't judge your midnight snack." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Glint" },
+      { name: "twitter:description", content: "Snap a pic of your meal, and Glint tells you what's good, what's not, and what to eat next — like a food coach who doesn't judge your midnight snack." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b3fd06d2-1a76-4de8-b58c-c5fcd321380b" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b3fd06d2-1a76-4de8-b58c-c5fcd321380b" },
     ],
     links: [
       {
