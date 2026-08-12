@@ -279,6 +279,12 @@ function GlintApp() {
         )}
       </section>
 
+      <p className="px-5 mt-6 max-w-2xl mx-auto text-[11px] leading-relaxed text-muted-foreground text-center">
+        Glint provides AI-estimated nutrition information for general wellness only. It is not medical,
+        dietary, or diagnostic advice. Meal photos are sent to an AI service for analysis and are never sold.
+      </p>
+
+
       <button
         onClick={() => setSheet("choose")}
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 h-16 w-16 rounded-full bg-gradient-mint text-primary-foreground shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition-transform animate-pulse-glow"
