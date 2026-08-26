@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target, LogOut } from "lucide-react";
+import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target, LogOut, Activity } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Welcome } from "@/components/Welcome";
+import { BodyScan, loadSavedScan, type BodyScanResult } from "@/components/BodyScan";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,6 +90,8 @@ function GlintApp() {
   const [preview, setPreview] = useState<Meal | null>(null);
   const [detail, setDetail] = useState<Meal | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showScan, setShowScan] = useState(false);
+  const [scan, setScan] = useState<BodyScanResult | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -98,6 +101,7 @@ function GlintApp() {
       if (raw) setMeals(JSON.parse(raw));
       const g = localStorage.getItem(GOAL_KEY);
       if (g) setGoal(g);
+      setScan(loadSavedScan());
     } catch {}
   }, []);
 
@@ -198,7 +202,8 @@ function GlintApp() {
     setDetail(null);
   }
 
-  const pct = Math.min(100, (totals.cal / DAILY_GOAL) * 100);
+  const calorieTarget = scan?.targetCalories && scan.targetCalories > 0 ? Math.round(scan.targetCalories) : DAILY_GOAL;
+  const pct = Math.min(100, (totals.cal / calorieTarget) * 100);
 
   return (
     <div className="min-h-screen bg-gradient-hero pb-32">
@@ -241,19 +246,40 @@ function GlintApp() {
             <div className="flex-1">
               <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Today</div>
               <div className="font-display font-bold text-3xl leading-tight">
-                {Math.round(totals.cal)}<span className="text-base text-muted-foreground font-medium"> / {DAILY_GOAL} kcal</span>
+                {Math.round(totals.cal)}<span className="text-base text-muted-foreground font-medium"> / {calorieTarget} kcal</span>
               </div>
               <div className="text-sm text-muted-foreground mt-1">
-                {DAILY_GOAL - totals.cal > 0 ? `${DAILY_GOAL - totals.cal} kcal remaining` : `${totals.cal - DAILY_GOAL} over goal`}
+                {calorieTarget - totals.cal > 0 ? `${Math.round(calorieTarget - totals.cal)} kcal remaining` : `${Math.round(totals.cal - calorieTarget)} over goal`}
               </div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3 mt-6">
-            <MacroBar label="Carbs" grams={totals.c} color="var(--carb)" goal={250} />
-            <MacroBar label="Protein" grams={totals.p} color="var(--protein)" goal={120} />
-            <MacroBar label="Fat" grams={totals.f} color="var(--fat)" goal={70} />
+            <MacroBar label="Carbs" grams={totals.c} color="var(--carb)" goal={scan?.macros?.carbs || 250} />
+            <MacroBar label="Protein" grams={totals.p} color="var(--protein)" goal={scan?.macros?.protein || 120} />
+            <MacroBar label="Fat" grams={totals.f} color="var(--fat)" goal={scan?.macros?.fat || 70} />
           </div>
         </div>
+      </section>
+
+      <section className="px-5 mt-4 max-w-2xl mx-auto">
+        <button
+          onClick={() => setShowScan(true)}
+          className="w-full text-left rounded-3xl bg-gradient-card border border-border p-5 shadow-card hover:border-primary/50 transition-colors"
+        >
+          <div className="flex items-center gap-4">
+            <div className="h-11 w-11 rounded-2xl bg-gradient-mint shadow-glow flex items-center justify-center shrink-0">
+              <Activity className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-display font-bold">Body Scan</div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {scan
+                  ? `${scan.bodyFat}% body fat · ${Math.round(scan.targetCalories)} kcal target — tap to rescan`
+                  : "Snap your physique + age & weight for a body fat estimate, calorie target and meal plan."}
+              </p>
+            </div>
+          </div>
+        </button>
       </section>
 
       <section className="px-5 mt-6 max-w-2xl mx-auto">
@@ -292,6 +318,10 @@ function GlintApp() {
       >
         <Plus className="h-7 w-7" strokeWidth={2.5} />
       </button>
+
+      {showScan && (
+        <BodyScan goal={goal} onClose={() => setShowScan(false)} onResult={(r) => setScan(r)} />
+      )}
 
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
