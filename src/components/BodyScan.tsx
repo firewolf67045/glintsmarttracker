@@ -82,8 +82,9 @@ export function BodyScan({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<BodyScanResult | null>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [day, setDay] = useState(0);
+  const [logged, setLogged] = useState<string | null>(null);
+
 
   function readFile(f: File) {
     const r = new FileReader();
