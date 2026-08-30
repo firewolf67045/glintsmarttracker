@@ -320,7 +320,27 @@ function GlintApp() {
       </button>
 
       {showScan && (
-        <BodyScan goal={goal} onClose={() => setShowScan(false)} onResult={(r) => setScan(r)} />
+        <BodyScan
+          goal={goal}
+          onClose={() => setShowScan(false)}
+          onResult={(r) => setScan(r)}
+          onLogMeal={(m) =>
+            setMeals((prev) => [
+              {
+                id: crypto.randomUUID(),
+                name: m.name,
+                description: m.description,
+                calories: m.calories,
+                carbs: m.carbs,
+                protein: m.protein,
+                fat: m.fat,
+                portion: m.meal,
+                ts: Date.now(),
+              },
+              ...prev,
+            ])
+          }
+        />
       )}
 
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden"
