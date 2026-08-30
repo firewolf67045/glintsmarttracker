@@ -84,6 +84,14 @@ export function BodyScan({
   const [result, setResult] = useState<BodyScanResult | null>(null);
   const [day, setDay] = useState(0);
   const [logged, setLogged] = useState<string | null>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const week = result?.weekPlan?.length ? result.weekPlan : [];
+  const activeDay = week[day];
+  const dayMeals: PlanMeal[] = activeDay?.meals?.length ? activeDay.meals : (result?.mealPlan || []);
+
+
 
 
   function readFile(f: File) {
