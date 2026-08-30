@@ -232,6 +232,11 @@ export function BodyScan({
         {result && (
           <div className="space-y-4">
             <div className="rounded-2xl bg-gradient-card border border-border p-5">
+              {result.physiqueTitle && (
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-mint/15 border border-primary/30 px-3 py-1 text-xs font-bold mb-3">
+                  <span>{result.physiqueEmoji || "✨"}</span> {result.physiqueTitle}
+                </div>
+              )}
               <div className="flex items-end gap-3">
                 <div className="font-display font-extrabold text-5xl leading-none">{result.bodyFat}%</div>
                 <div className="pb-1">
@@ -268,12 +273,46 @@ export function BodyScan({
             </div>
 
             <div className="rounded-2xl bg-card border border-border p-5">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-1">
                 <Dumbbell className="h-4 w-4 text-primary" />
-                <h4 className="font-display font-bold">Meals to eat</h4>
+                <h4 className="font-display font-bold">Your food week</h4>
               </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                A different cuisine every day — tap a meal to log it instantly.
+              </p>
+
+              {week.length > 1 && (
+                <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
+                  {week.map((d, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setDay(i)}
+                      className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold border transition-colors ${
+                        i === day
+                          ? "bg-gradient-mint text-primary-foreground border-transparent shadow-glow"
+                          : "bg-muted/40 border-border text-muted-foreground"
+                      }`}
+                    >
+                      <span className="mr-1">{d.emoji || "🍽️"}</span>
+                      {(d.day || `Day ${i + 1}`).slice(0, 3)}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeDay && (
+                <div className="flex items-baseline justify-between gap-3 mt-1 mb-2">
+                  <div className="text-sm font-semibold">
+                    {activeDay.emoji} {activeDay.theme}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {activeDay.totalCalories || dayMeals.reduce((s, m) => s + (m.calories || 0), 0)} kcal
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2.5">
-                {(result.mealPlan || []).map((m, i) => (
+                {dayMeals.map((m, i) => (
                   <div key={i} className="rounded-xl bg-muted/40 border border-border p-3">
                     <div className="flex items-baseline justify-between gap-3">
                       <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{m.meal}</div>
@@ -281,18 +320,89 @@ export function BodyScan({
                     </div>
                     <div className="font-semibold text-sm mt-0.5">{m.name}</div>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{m.description}</p>
-                    <div className="text-[11px] text-muted-foreground mt-1.5">
-                      P {m.protein}g · C {m.carbs}g · F {m.fat}g
+                    <div className="flex items-center justify-between gap-3 mt-2">
+                      <div className="text-[11px] text-muted-foreground">
+                        P {m.protein}g · C {m.carbs}g · F {m.fat}g
+                      </div>
+                      {onLogMeal && (
+                        <button
+                          onClick={() => { onLogMeal(m); setLogged(`${day}-${i}`); }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold rounded-lg border border-primary/40 bg-gradient-mint/10 px-2 py-1"
+                        >
+                          {logged === `${day}-${i}` ? <><CheckCircle2 className="h-3 w-3" /> Logged</> : <><PlusCircle className="h-3 w-3" /> Log it</>}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
+            {!!result.swaps?.length && (
+              <div className="rounded-2xl bg-card border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Repeat className="h-4 w-4 text-primary" />
+                  <h4 className="font-display font-bold">Smart swaps</h4>
+                </div>
+                <div className="space-y-2">
+                  {result.swaps.map((s, i) => (
+                    <div key={i} className="rounded-xl bg-muted/40 border border-border p-3">
+                      <div className="text-sm font-semibold">
+                        <span className="text-muted-foreground line-through">{s.from}</span> → {s.to}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{s.why}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-2.5">
+              {result.treatMeal?.name && (
+                <div className="rounded-2xl bg-card border border-border p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Cookie className="h-4 w-4 text-primary" />
+                    <h4 className="font-display font-bold text-sm">Weekly treat — guilt free</h4>
+                  </div>
+                  <div className="text-sm font-semibold">{result.treatMeal.name} · {result.treatMeal.calories} kcal</div>
+                  <p className="text-xs text-muted-foreground mt-1">{result.treatMeal.why}</p>
+                </div>
+              )}
+
+              {result.hydration?.litersPerDay && (
+                <div className="rounded-2xl bg-card border border-border p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Droplets className="h-4 w-4 text-primary" />
+                    <h4 className="font-display font-bold text-sm">Hydration · {result.hydration.litersPerDay} L/day</h4>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{result.hydration.tip}</p>
+                </div>
+              )}
+
+              <ListCard icon={<ShoppingBasket className="h-4 w-4 text-primary" />} title="Grocery list for the week" items={result.groceryList} />
               <ListCard icon={<CheckCircle2 className="h-4 w-4 text-primary" />} title="Eat more of" items={result.foodsToAdd} />
               <ListCard icon={<AlertCircle className="h-4 w-4 text-primary" />} title="Cut back on" items={result.foodsToLimit} />
               <ListCard icon={<Target className="h-4 w-4 text-primary" />} title="Focus areas" items={result.focusAreas} />
+
+              {result.weeklyChallenge && (
+                <div className="rounded-2xl bg-card border border-border p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Trophy className="h-4 w-4 text-primary" />
+                    <h4 className="font-display font-bold text-sm">7-day challenge</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{result.weeklyChallenge}</p>
+                </div>
+              )}
+
+              {result.funFact && (
+                <div className="rounded-2xl bg-card border border-border p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Lightbulb className="h-4 w-4 text-primary" />
+                    <h4 className="font-display font-bold text-sm">Did you know?</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{result.funFact}</p>
+                </div>
+              )}
             </div>
 
             {result.coachNote && (
@@ -300,6 +410,7 @@ export function BodyScan({
                 {result.coachNote}
               </div>
             )}
+
 
             <button
               onClick={() => { setResult(null); }}
