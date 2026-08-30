@@ -1,11 +1,23 @@
 import { useRef, useState } from "react";
-import { Camera, Loader2, X, Plus, Activity, Flame, Dumbbell, Target, CheckCircle2, AlertCircle } from "lucide-react";
+import { Camera, Loader2, X, Plus, Activity, Flame, Dumbbell, Target, CheckCircle2, AlertCircle, Repeat, Droplets, ShoppingBasket, Trophy, Lightbulb, Cookie, PlusCircle } from "lucide-react";
+
+export type PlanMeal = {
+  meal: string;
+  name: string;
+  description: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
 
 export type BodyScanResult = {
   bodyFat: number;
   bodyFatRange: string;
   confidence: "high" | "medium" | "low";
   category: string;
+  physiqueTitle?: string;
+  physiqueEmoji?: string;
   physiqueSummary: string;
   leanMassKg: number;
   fatMassKg: number;
@@ -19,17 +31,22 @@ export type BodyScanResult = {
   timelineNote: string;
   strengths: string[];
   focusAreas: string[];
-  mealPlan: Array<{
-    meal: string;
-    name: string;
-    description: string;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
+  mealPlan: PlanMeal[];
+  weekPlan?: Array<{
+    day: string;
+    theme: string;
+    emoji: string;
+    totalCalories: number;
+    meals: PlanMeal[];
   }>;
+  swaps?: Array<{ from: string; to: string; why: string }>;
+  treatMeal?: { name: string; why: string; calories: number };
+  hydration?: { litersPerDay: number; tip: string };
+  groceryList?: string[];
   foodsToAdd: string[];
   foodsToLimit: string[];
+  weeklyChallenge?: string;
+  funFact?: string;
   coachNote: string;
 };
 
@@ -48,11 +65,14 @@ export function BodyScan({
   goal,
   onClose,
   onResult,
+  onLogMeal,
 }: {
   goal: string;
   onClose: () => void;
   onResult?: (r: BodyScanResult) => void;
+  onLogMeal?: (m: PlanMeal) => void;
 }) {
+
   const [image, setImage] = useState<string | null>(null);
   const [age, setAge] = useState("");
   const [weight, setWeight] = useState("");
