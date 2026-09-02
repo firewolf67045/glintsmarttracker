@@ -34,6 +34,13 @@ export type BodyScanResult = {
   timelineNote: string;
   strengths: string[];
   focusAreas: string[];
+  improvements?: Array<{
+    title: string;
+    action: string;
+    impact: string;
+    timeframe: string;
+    emoji?: string;
+  }>;
   mealPlan: PlanMeal[];
   weekPlan?: Array<{
     day: string;
