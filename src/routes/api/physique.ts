@@ -18,6 +18,9 @@ Respond ONLY with strict JSON (no markdown, no commentary) in this exact shape:
   "bodyFat": number,                 // estimated body fat percentage, 1 decimal
   "bodyFatRange": string,            // e.g. "14-17%"
   "confidence": "high"|"medium"|"low",
+  "percentile": number,              // 0-100 whole number: where this physique's leanness/condition ranks vs same-sex peers of similar age
+  "percentileLabel": string,         // short punchy label, e.g. "Top 15% of guys your age"
+  "percentileNote": string,          // 1 sentence explaining what the percentile means and how it was estimated
   "category": string,                // e.g. "Athletic", "Fit", "Average", "Above average"
   "physiqueTitle": string,           // fun earned nickname, e.g. "The Lean Machine", "Rising Powerhouse"
   "physiqueEmoji": string,           // single emoji that matches the title
