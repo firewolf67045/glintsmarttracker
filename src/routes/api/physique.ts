@@ -37,6 +37,9 @@ Respond ONLY with strict JSON (no markdown, no commentary) in this exact shape:
   "timelineNote": string,            // realistic expectation, 1 sentence
   "strengths": string[],             // 2-3 short positives about their physique
   "focusAreas": string[],            // 2-3 short training/nutrition focus points
+  "improvements": [                  // exactly 4 concrete ways to improve, ordered by impact
+    { "title": string, "action": string, "impact": string, "timeframe": string, "emoji": string }
+  ],
   "mealPlan": [                      // exactly 4 entries for TODAY: Breakfast, Lunch, Dinner, Snack
     { "meal": string, "name": string, "description": string, "calories": number,
       "protein": number, "carbs": number, "fat": number }
