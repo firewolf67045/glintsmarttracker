@@ -15,6 +15,9 @@ export type BodyScanResult = {
   bodyFat: number;
   bodyFatRange: string;
   confidence: "high" | "medium" | "low";
+  percentile?: number;
+  percentileLabel?: string;
+  percentileNote?: string;
   category: string;
   physiqueTitle?: string;
   physiqueEmoji?: string;
