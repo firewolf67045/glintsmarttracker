@@ -15,6 +15,9 @@ export type BodyScanResult = {
   bodyFat: number;
   bodyFatRange: string;
   confidence: "high" | "medium" | "low";
+  percentile?: number;
+  percentileLabel?: string;
+  percentileNote?: string;
   category: string;
   physiqueTitle?: string;
   physiqueEmoji?: string;
@@ -31,6 +34,13 @@ export type BodyScanResult = {
   timelineNote: string;
   strengths: string[];
   focusAreas: string[];
+  improvements?: Array<{
+    title: string;
+    action: string;
+    impact: string;
+    timeframe: string;
+    emoji?: string;
+  }>;
   mealPlan: PlanMeal[];
   weekPlan?: Array<{
     day: string;
@@ -261,6 +271,71 @@ export function BodyScan({
                 <Stat label="Fat mass" value={`${result.fatMassKg} kg`} />
               </div>
             </div>
+
+            {typeof result.percentile === "number" && (
+              <div className="rounded-2xl bg-card border border-border p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy className="h-4 w-4 text-primary" />
+                  <h4 className="font-display font-bold">Percentile score</h4>
+                </div>
+                <div className="flex items-end gap-3">
+                  <div className="font-display font-extrabold text-4xl leading-none text-primary">
+                    {Math.round(result.percentile)}
+                    <span className="text-lg align-top">th</span>
+                  </div>
+                  <div className="pb-1 text-sm font-semibold">
+                    {result.percentileLabel || "vs. peers your age"}
+                  </div>
+                </div>
+                <div className="mt-3 h-2.5 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-mint transition-all duration-700"
+                    style={{ width: `${Math.min(100, Math.max(0, result.percentile))}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                  <span>0</span>
+                  <span>50</span>
+                  <span>100</span>
+                </div>
+                {result.percentileNote && (
+                  <p className="text-sm text-muted-foreground mt-3 leading-relaxed">{result.percentileNote}</p>
+                )}
+              </div>
+            )}
+
+            {result.improvements && result.improvements.length > 0 && (
+              <div className="rounded-2xl bg-card border border-border p-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="h-4 w-4 text-primary" />
+                  <h4 className="font-display font-bold">Ways to improve</h4>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Ordered by biggest impact first.</p>
+                <div className="space-y-2.5">
+                  {result.improvements.map((imp, i) => (
+                    <div key={i} className="rounded-xl bg-secondary/40 border border-border p-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{imp.emoji || "💪"}</span>
+                        <span className="font-semibold text-sm">{imp.title}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">{imp.action}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {imp.impact && (
+                          <span className="rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-bold">
+                            {imp.impact}
+                          </span>
+                        )}
+                        {imp.timeframe && (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            {imp.timeframe}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="rounded-2xl bg-card border border-border p-5">
               <div className="flex items-center gap-2 mb-3">
