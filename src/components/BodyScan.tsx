@@ -76,11 +76,13 @@ export function BodyScan({
   onClose,
   onResult,
   onLogMeal,
+  language,
 }: {
   goal: string;
   onClose: () => void;
   onResult?: (r: BodyScanResult) => void;
   onLogMeal?: (m: PlanMeal) => void;
+  language?: string;
 }) {
 
   const [image, setImage] = useState<string | null>(null);
@@ -129,6 +131,7 @@ export function BodyScan({
           sex,
           activity,
           goal,
+           language,
         }),
       });
       const data = await res.json();
