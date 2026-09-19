@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target, LogOut, Activity } from "lucide-react";
+import { Camera, Sparkles, Trash2, Loader2, Plus, Flame, X, Type as TypeIcon, Zap, Leaf, Moon, Heart, Sun, Lightbulb, Target, LogOut, Activity, Settings2, ScanLine, Utensils } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Welcome } from "@/components/Welcome";
 import { BodyScan, loadSavedScan, type BodyScanResult } from "@/components/BodyScan";
+import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components/Assessment";
+import { LanguageSelect } from "@/components/LanguageSelect";
+import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,6 +27,10 @@ export const Route = createFileRoute("/")({
 function RouteComponent() {
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "en";
+    return (localStorage.getItem(LANGUAGE_KEY) as Language) || "en";
+  });
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
@@ -38,8 +45,9 @@ function RouteComponent() {
   }, []);
 
   if (!ready) return <div className="min-h-screen bg-background" />;
-  if (!session) return <Welcome />;
-  return <GlintApp />;
+  const changeLanguage = (next: Language) => { localStorage.setItem(LANGUAGE_KEY, next); setLanguage(next); };
+  if (!session) return <Welcome language={language} onLanguageChange={changeLanguage} />;
+  return <GlintApp session={session} language={language} onLanguageChange={changeLanguage} />;
 }
 
 type Verdict = "green" | "yellow" | "red";
@@ -80,7 +88,7 @@ function todayKey() {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-function GlintApp() {
+function GlintApp({ session, language, onLanguageChange }: { session: Session; language: Language; onLanguageChange: (language: Language) => void }) {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [goal, setGoal] = useState<string>("balanced");
   const [loading, setLoading] = useState(false);
@@ -92,6 +100,11 @@ function GlintApp() {
   const [error, setError] = useState<string | null>(null);
   const [showScan, setShowScan] = useState(false);
   const [scan, setScan] = useState<BodyScanResult | null>(null);
+  const [profile, setProfile] = useState<AssessmentProfile | null>(null);
+  const [assessmentReady, setAssessmentReady] = useState(false);
+  const [showAssessment, setShowAssessment] = useState(false);
+  const t = (key: string) => translate(language, key);
+  const profileKey = `${ASSESSMENT_KEY}.${session.user.id}`;
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -102,7 +115,11 @@ function GlintApp() {
       const g = localStorage.getItem(GOAL_KEY);
       if (g) setGoal(g);
       setScan(loadSavedScan());
-    } catch {}
+      const savedProfile = localStorage.getItem(profileKey);
+      if (savedProfile) setProfile(JSON.parse(savedProfile));
+      else setShowAssessment(true);
+    } catch { setShowAssessment(true); }
+    finally { setAssessmentReady(true); }
   }, []);
 
   useEffect(() => {
@@ -147,7 +164,7 @@ function GlintApp() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, goal }),
+        body: JSON.stringify({ ...payload, goal, language: languageName(language) }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Analysis failed");
@@ -202,90 +219,68 @@ function GlintApp() {
     setDetail(null);
   }
 
-  const calorieTarget = scan?.targetCalories && scan.targetCalories > 0 ? Math.round(scan.targetCalories) : DAILY_GOAL;
+  const profileTarget = profile?.goal === "muscle gain" ? 2400 : profile?.goal === "fat loss" ? 1800 : profile?.goal === "energy" ? 2200 : DAILY_GOAL;
+  const calorieTarget = scan?.targetCalories && scan.targetCalories > 0 ? Math.round(scan.targetCalories) : profileTarget;
   const pct = Math.min(100, (totals.cal / calorieTarget) * 100);
 
   return (
-    <div className="min-h-screen bg-gradient-hero pb-32">
+    <div className="min-h-screen bg-gradient-hero pb-32" dir={language === "ar" ? "rtl" : "ltr"}>
+      {assessmentReady && showAssessment && (
+        <Assessment language={language} initial={profile} onComplete={(next) => {
+          setProfile(next); setGoal(next.goal); localStorage.setItem(profileKey, JSON.stringify(next)); setShowAssessment(false);
+        }} />
+      )}
       <header className="px-5 pt-7 pb-5 flex items-center justify-between max-w-2xl mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-9 rounded-xl bg-gradient-mint shadow-glow flex items-center justify-center">
-            <Sparkles className="h-4.5 w-4.5 text-primary-foreground" strokeWidth={2.5} />
-          </div>
+        <div className="flex items-center gap-3">
+          <div className="logo-gem"><Sparkles className="h-4.5 w-4.5" strokeWidth={2.5} /></div>
           <div>
-            <div className="font-display font-bold text-lg leading-tight">glint</div>
-            <div className="text-[11px] text-muted-foreground">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })}</div>
+            <div className="font-display font-extrabold text-lg leading-tight">glint<span className="text-primary">.</span></div>
+            <div className="text-[11px] text-muted-foreground">{new Date().toLocaleDateString(localeFor(language), { weekday: "long", month: "short", day: "numeric" })}</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            value={goal}
-            onChange={(e) => setGoal(e.target.value)}
-            className="text-xs bg-card border border-border rounded-lg px-2 py-1.5 font-medium"
-            aria-label="Goal"
-          >
-            <option value="balanced">⚖️ Balanced</option>
-            <option value="muscle gain">💪 Muscle</option>
-            <option value="fat loss">🔥 Fat loss</option>
-            <option value="energy">⚡ Energy</option>
-          </select>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors"
-            aria-label="Sign out"
-          >
-            <LogOut className="h-4 w-4 text-muted-foreground" />
-          </button>
+          <LanguageSelect value={language} onChange={onLanguageChange} compact />
+          <button onClick={() => setShowAssessment(true)} className="header-icon" aria-label={t("editPlan")}><Settings2 className="h-4 w-4" /></button>
+          <button onClick={() => supabase.auth.signOut()} className="header-icon" aria-label={t("signOut")}><LogOut className="h-4 w-4" /></button>
         </div>
       </header>
 
       <section className="px-5 max-w-2xl mx-auto">
-        <div className="rounded-3xl bg-gradient-card border border-border p-6 shadow-card">
-          <div className="flex items-center gap-6">
+        <div className="mb-4">
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-primary">{t("greeting")}</div>
+          <h1 className="mt-1 font-display text-3xl font-extrabold">{profile?.name || "Champion"}<span className="text-primary">.</span></h1>
+        </div>
+        <div className="fuel-card">
+          <div className="fuel-orb fuel-orb-one" /><div className="fuel-orb fuel-orb-two" />
+          <div className="relative flex items-center gap-5">
             <RingProgress pct={pct} value={Math.round(totals.cal)} />
             <div className="flex-1">
-              <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Today</div>
-              <div className="font-display font-bold text-3xl leading-tight">
-                {Math.round(totals.cal)}<span className="text-base text-muted-foreground font-medium"> / {calorieTarget} kcal</span>
-              </div>
-              <div className="text-sm text-muted-foreground mt-1">
-                {calorieTarget - totals.cal > 0 ? `${Math.round(calorieTarget - totals.cal)} kcal remaining` : `${Math.round(totals.cal - calorieTarget)} over goal`}
-              </div>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary"><Flame className="h-3.5 w-3.5" />{t("dailyFuel")}</div>
+              <div className="mt-1 font-display font-extrabold text-3xl leading-tight">{Math.round(totals.cal)}<span className="text-sm text-muted-foreground font-medium"> / {calorieTarget} {t("kcal")}</span></div>
+              <div className="mt-1 text-sm text-muted-foreground">{calorieTarget - totals.cal > 0 ? `${Math.round(calorieTarget - totals.cal)} ${t("remaining")}` : `${Math.round(totals.cal - calorieTarget)} ${t("over")}`}</div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mt-6">
-            <MacroBar label="Carbs" grams={totals.c} color="var(--carb)" goal={scan?.macros?.carbs || 250} />
-            <MacroBar label="Protein" grams={totals.p} color="var(--protein)" goal={scan?.macros?.protein || 120} />
-            <MacroBar label="Fat" grams={totals.f} color="var(--fat)" goal={scan?.macros?.fat || 70} />
+          <div className="relative grid grid-cols-3 gap-3 mt-6">
+            <MacroBar label={t("carbs")} grams={totals.c} color="var(--carb)" goal={scan?.macros?.carbs || 250} />
+            <MacroBar label={t("protein")} grams={totals.p} color="var(--protein)" goal={scan?.macros?.protein || 120} />
+            <MacroBar label={t("fat")} grams={totals.f} color="var(--fat)" goal={scan?.macros?.fat || 70} />
           </div>
         </div>
       </section>
 
-      <section className="px-5 mt-4 max-w-2xl mx-auto">
-        <button
-          onClick={() => setShowScan(true)}
-          className="w-full text-left rounded-3xl bg-gradient-card border border-border p-5 shadow-card hover:border-primary/50 transition-colors"
-        >
-          <div className="flex items-center gap-4">
-            <div className="h-11 w-11 rounded-2xl bg-gradient-mint shadow-glow flex items-center justify-center shrink-0">
-              <Activity className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-display font-bold">Body Scan</div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {scan
-                  ? `${scan.bodyFat}% body fat · ${Math.round(scan.targetCalories)} kcal target — tap to rescan`
-                  : "Snap your physique + age & weight for a body fat estimate, calorie target and meal plan."}
-              </p>
-            </div>
-          </div>
+      <section className="px-5 mt-4 max-w-2xl mx-auto grid grid-cols-2 gap-3">
+        <button onClick={() => setSheet("choose")} className="quick-card quick-card-meal">
+          <span className="quick-icon"><Utensils /></span><span className="font-display font-bold">{t("addMeal")}</span><span>{t("describeSub")}</span>
+        </button>
+        <button onClick={() => setShowScan(true)} className="quick-card quick-card-scan">
+          <span className="quick-icon"><ScanLine /></span><span className="font-display font-bold">{t("bodyScan")}</span><span>{scan ? `${scan.bodyFat}% · ${Math.round(scan.targetCalories)} kcal` : t("bodyScanNew")}</span>
         </button>
       </section>
 
       <section className="px-5 mt-6 max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-bold text-lg">Today's meals</h2>
-          <span className="text-xs text-muted-foreground">{today.length} logged</span>
+          <h2 className="font-display font-bold text-lg">{t("mealsToday")}</h2>
+          <span className="meal-count">{today.length} {t("logged")}</span>
         </div>
 
         {today.length === 0 ? (
@@ -322,6 +317,7 @@ function GlintApp() {
       {showScan && (
         <BodyScan
           goal={goal}
+          language={languageName(language)}
           onClose={() => setShowScan(false)}
           onResult={(r) => setScan(r)}
           onLogMeal={(m) =>
@@ -362,11 +358,11 @@ function GlintApp() {
                 <h3 className="font-display font-bold text-xl mb-1">Log a meal</h3>
                 <p className="text-sm text-muted-foreground mb-5">Pick how you want to add it.</p>
                 <div className="space-y-2.5">
-                  <SheetBtn icon={<Camera className="h-5 w-5" />} title="Take photo" desc="Snap your meal with the camera"
+                  <SheetBtn icon={<Camera className="h-5 w-5" />} title={t("takePhoto")} desc={t("takePhotoSub")}
                     onClick={() => cameraRef.current?.click()} />
-                  <SheetBtn icon={<Plus className="h-5 w-5" />} title="Upload photo" desc="Choose from your gallery"
+                  <SheetBtn icon={<Plus className="h-5 w-5" />} title={t("uploadPhoto")} desc={t("uploadPhotoSub")}
                     onClick={() => fileRef.current?.click()} />
-                  <SheetBtn icon={<TypeIcon className="h-5 w-5" />} title="Describe in text" desc="e.g. 'large salmon bowl'"
+                  <SheetBtn icon={<TypeIcon className="h-5 w-5" />} title={t("describe")} desc={t("describeSub")}
                     onClick={() => setSheet("text")} />
                 </div>
               </div>
@@ -374,7 +370,7 @@ function GlintApp() {
 
             {sheet === "text" && (
               <div>
-                <h3 className="font-display font-bold text-xl mb-1">Describe your meal</h3>
+                <h3 className="font-display font-bold text-xl mb-1">{t("describeMeal")}</h3>
                 <p className="text-sm text-muted-foreground mb-5">AI will estimate calories, macros and a Glint Score.</p>
                 <textarea
                   autoFocus
@@ -388,7 +384,7 @@ function GlintApp() {
                   disabled={!textInput.trim()}
                   className="mt-4 w-full py-4 rounded-2xl bg-gradient-mint text-primary-foreground font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Analyze
+                  {t("analyze")}
                 </button>
               </div>
             )}
@@ -402,7 +398,7 @@ function GlintApp() {
                 {loading && (
                   <div className="py-10 text-center">
                     <Loader2 className="h-8 w-8 text-primary animate-spin mx-auto mb-3" />
-                    <div className="font-semibold">Analyzing your meal…</div>
+                    <div className="font-semibold">{t("analyzing")}</div>
                     <p className="text-sm text-muted-foreground mt-1">Reading ingredients, portions & nutrients</p>
                   </div>
                 )}
@@ -419,10 +415,10 @@ function GlintApp() {
                     <MealDetailContent meal={preview} />
                     <div className="flex gap-2 mt-5">
                       <button onClick={closeSheet} className="flex-1 py-4 rounded-2xl bg-muted text-foreground font-semibold">
-                        Discard
+                        {t("discard")}
                       </button>
                       <button onClick={logMeal} className="flex-[2] py-4 rounded-2xl bg-gradient-mint text-primary-foreground font-semibold shadow-glow">
-                        Log meal
+                        {t("logIt")}
                       </button>
                     </div>
                   </>

@@ -9,6 +9,7 @@ type PhysiqueBody = {
   sex?: string;
   activity?: string;
   goal?: string;
+  language?: string;
 };
 
 const SYSTEM = `You are Glint Body Scan — a fun, encouraging AI physique & nutrition coach with real personality. You estimate body composition from a physique photo plus user stats, then build a calorie target and a genuinely varied, delicious week of food. You are never boring: no chicken-and-rice seven days in a row.
@@ -90,7 +91,8 @@ export const Route = createFileRoute("/api/physique")({
           body.heightCm ? `Height: ${body.heightCm} cm` : null,
           body.sex ? `Sex: ${body.sex}` : null,
           body.activity ? `Activity level: ${body.activity}` : null,
-          `Goal: ${body.goal || "balanced"}`,
+           `Goal: ${body.goal || "balanced"}`,
+           `Output language: ${body.language || "English"}. Translate all user-facing values, but keep JSON keys in English.`,
         ]
           .filter(Boolean)
           .join(", ");

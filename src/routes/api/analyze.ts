@@ -1,7 +1,7 @@
 import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 
-type AnalyzeBody = { image?: string; text?: string; goal?: string };
+type AnalyzeBody = { image?: string; text?: string; goal?: string; language?: string };
 
 const SYSTEM = `You are Glint — a witty, chef-meets-nutritionist AI. For any food photo or text, return a rich JSON nutrition+vibe profile.
 
@@ -42,10 +42,11 @@ export const Route = createFileRoute("/api/analyze")({
           return new Response("image or text required", { status: 400 });
         }
 
-        const goalLine = body.goal ? `User's goal: ${body.goal}.` : "User has no specific goal — give balanced advice.";
+         const goalLine = body.goal ? `User's goal: ${body.goal}.` : "User has no specific goal — give balanced advice.";
+         const languageLine = `Write every user-facing string in ${body.language || "English"}. Keep JSON property names in English.`;
         const userText = body.text
-          ? `Analyze this meal: ${body.text}. ${goalLine}`
-          : `Analyze this meal photo and return the JSON profile. ${goalLine}`;
+           ? `Analyze this meal: ${body.text}. ${goalLine} ${languageLine}`
+           : `Analyze this meal photo and return the JSON profile. ${goalLine} ${languageLine}`;
 
         const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> =
           body.image
