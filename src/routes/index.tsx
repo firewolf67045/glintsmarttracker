@@ -110,8 +110,6 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setMeals(JSON.parse(raw));
       const g = localStorage.getItem(GOAL_KEY);
       if (g) setGoal(g);
       setScan(loadSavedScan());
@@ -122,9 +120,26 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     finally { setAssessmentReady(true); }
   }, []);
 
+  // Meals + photos live in the account, so they come back on every sign-in.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(meals)); } catch {}
-  }, [meals]);
+    let active = true;
+    (async () => {
+      const cloud = (await fetchMeals(session.user.id)) as unknown as Meal[];
+      if (!active) return;
+      if (cloud.length) { setMeals(cloud); return; }
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const legacy: Meal[] = raw ? JSON.parse(raw) : [];
+        if (legacy.length) {
+          const migrated: Meal[] = [];
+          for (const m of legacy) migrated.push((await saveMeal(session.user.id, m as never)) as unknown as Meal);
+          if (active) setMeals(migrated);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [session.user.id]);
 
   useEffect(() => {
     try { localStorage.setItem(GOAL_KEY, goal); } catch {}
