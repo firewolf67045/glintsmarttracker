@@ -8,6 +8,7 @@ import { BodyScan, loadSavedScan, type BodyScanResult } from "@/components/BodyS
 import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components/Assessment";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
+import { fetchMeals, removeMeal, saveMeal } from "@/lib/mealStore";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -110,8 +111,6 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setMeals(JSON.parse(raw));
       const g = localStorage.getItem(GOAL_KEY);
       if (g) setGoal(g);
       setScan(loadSavedScan());
@@ -122,9 +121,26 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     finally { setAssessmentReady(true); }
   }, []);
 
+  // Meals + photos live in the account, so they come back on every sign-in.
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(meals)); } catch {}
-  }, [meals]);
+    let active = true;
+    (async () => {
+      const cloud = (await fetchMeals(session.user.id)) as unknown as Meal[];
+      if (!active) return;
+      if (cloud.length) { setMeals(cloud); return; }
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const legacy: Meal[] = raw ? JSON.parse(raw) : [];
+        if (legacy.length) {
+          const migrated: Meal[] = [];
+          for (const m of legacy) migrated.push((await saveMeal(session.user.id, m as never)) as unknown as Meal);
+          if (active) setMeals(migrated);
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      } catch {}
+    })();
+    return () => { active = false; };
+  }, [session.user.id]);
 
   useEffect(() => {
     try { localStorage.setItem(GOAL_KEY, goal); } catch {}
@@ -200,9 +216,17 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     }
   }
 
+  async function persistMeal(meal: Meal) {
+    setMeals((prev) => [meal, ...prev]);
+    try {
+      const saved = (await saveMeal(session.user.id, meal as never)) as unknown as Meal;
+      setMeals((prev) => prev.map((m) => (m.id === meal.id ? saved : m)));
+    } catch {}
+  }
+
   function logMeal() {
     if (!preview) return;
-    setMeals((prev) => [preview, ...prev]);
+    void persistMeal(preview);
     closeSheet();
   }
 
@@ -217,6 +241,7 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
   function deleteMeal(id: string) {
     setMeals((prev) => prev.filter((m) => m.id !== id));
     setDetail(null);
+    void removeMeal(session.user.id, id);
   }
 
   const profileTarget = profile?.goal === "muscle gain" ? 2400 : profile?.goal === "fat loss" ? 1800 : profile?.goal === "energy" ? 2200 : DAILY_GOAL;
@@ -321,20 +346,17 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
           onClose={() => setShowScan(false)}
           onResult={(r) => setScan(r)}
           onLogMeal={(m) =>
-            setMeals((prev) => [
-              {
-                id: crypto.randomUUID(),
-                name: m.name,
-                description: m.description,
-                calories: m.calories,
-                carbs: m.carbs,
-                protein: m.protein,
-                fat: m.fat,
-                portion: m.meal,
-                ts: Date.now(),
-              },
-              ...prev,
-            ])
+            void persistMeal({
+              id: crypto.randomUUID(),
+              name: m.name,
+              description: m.description,
+              calories: m.calories,
+              carbs: m.carbs,
+              protein: m.protein,
+              fat: m.fat,
+              portion: m.meal,
+              ts: Date.now(),
+            })
           }
         />
       )}
