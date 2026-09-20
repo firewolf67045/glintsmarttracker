@@ -8,6 +8,7 @@ import { BodyScan, loadSavedScan, type BodyScanResult } from "@/components/BodyS
 import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components/Assessment";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
+import { fetchMeals, removeMeal, saveMeal } from "@/lib/mealStore";
 
 export const Route = createFileRoute("/")({
   head: () => ({
