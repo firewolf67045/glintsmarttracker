@@ -346,20 +346,17 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
           onClose={() => setShowScan(false)}
           onResult={(r) => setScan(r)}
           onLogMeal={(m) =>
-            setMeals((prev) => [
-              {
-                id: crypto.randomUUID(),
-                name: m.name,
-                description: m.description,
-                calories: m.calories,
-                carbs: m.carbs,
-                protein: m.protein,
-                fat: m.fat,
-                portion: m.meal,
-                ts: Date.now(),
-              },
-              ...prev,
-            ])
+            void persistMeal({
+              id: crypto.randomUUID(),
+              name: m.name,
+              description: m.description,
+              calories: m.calories,
+              carbs: m.carbs,
+              protein: m.protein,
+              fat: m.fat,
+              portion: m.meal,
+              ts: Date.now(),
+            })
           }
         />
       )}
