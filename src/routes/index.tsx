@@ -215,9 +215,17 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     }
   }
 
+  async function persistMeal(meal: Meal) {
+    setMeals((prev) => [meal, ...prev]);
+    try {
+      const saved = (await saveMeal(session.user.id, meal as never)) as unknown as Meal;
+      setMeals((prev) => prev.map((m) => (m.id === meal.id ? saved : m)));
+    } catch {}
+  }
+
   function logMeal() {
     if (!preview) return;
-    setMeals((prev) => [preview, ...prev]);
+    void persistMeal(preview);
     closeSheet();
   }
 
@@ -232,6 +240,7 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
   function deleteMeal(id: string) {
     setMeals((prev) => prev.filter((m) => m.id !== id));
     setDetail(null);
+    void removeMeal(session.user.id, id);
   }
 
   const profileTarget = profile?.goal === "muscle gain" ? 2400 : profile?.goal === "fat loss" ? 1800 : profile?.goal === "energy" ? 2200 : DAILY_GOAL;
