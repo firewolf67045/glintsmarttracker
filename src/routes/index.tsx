@@ -178,7 +178,8 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     setError(null);
     setPreview(null);
     try {
-      const data = await apiPost<Record<string, unknown>>("/api/analyze", {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiPost<any>("/api/analyze", {
         ...payload,
         goal,
         language: languageName(language),
