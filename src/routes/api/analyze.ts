@@ -86,18 +86,18 @@ export const Route = createFileRoute("/api/analyze")({
 
         if (!res.ok) {
           const errText = await res.text();
-          if (res.status === 429) return Response.json({ error: "Rate limit. Try again shortly." }, { status: 429 });
-          if (res.status === 402) return Response.json({ error: "AI credits exhausted." }, { status: 402 });
-          return Response.json({ error: `AI error: ${errText}` }, { status: 500 });
+          if (res.status === 429) return json({ error: "Rate limit. Try again shortly." }, 429);
+          if (res.status === 402) return json({ error: "AI credits exhausted." }, 402);
+          return json({ error: `AI error: ${errText}` }, 500);
         }
 
         const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
         const content = data.choices?.[0]?.message?.content ?? "{}";
         try {
           const parsed = JSON.parse(content);
-          return Response.json(parsed);
+          return json(parsed);
         } catch {
-          return Response.json({ error: "Could not parse AI response", raw: content }, { status: 500 });
+          return json({ error: "Could not parse AI response", raw: content }, 500);
         }
       },
     },
