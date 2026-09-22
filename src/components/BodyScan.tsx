@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Camera, Loader2, X, Plus, Activity, Flame, Dumbbell, Target, CheckCircle2, AlertCircle, Repeat, Droplets, ShoppingBasket, Trophy, Lightbulb, Cookie, PlusCircle } from "lucide-react";
+import { apiPost } from "@/lib/api";
 
 export type PlanMeal = {
   meal: string;
@@ -120,22 +121,16 @@ export function BodyScan({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/physique", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image,
-          age: Number(age),
-          weightKg: Number(weight),
-          heightCm: height ? Number(height) : undefined,
-          sex,
-          activity,
-          goal,
-           language,
-        }),
+      const data = await apiPost<BodyScanResult>("/api/physique", {
+        image,
+        age: Number(age),
+        weightKg: Number(weight),
+        heightCm: height ? Number(height) : undefined,
+        sex,
+        activity,
+        goal,
+        language,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Scan failed");
       setResult(data as BodyScanResult);
       try { localStorage.setItem(SCAN_KEY, JSON.stringify(data)); } catch {}
       onResult?.(data as BodyScanResult);

@@ -9,6 +9,7 @@ import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
 import { fetchMeals, removeMeal, saveMeal } from "@/lib/mealStore";
+import { apiPost } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -177,13 +178,12 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     setError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, goal, language: languageName(language) }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = await apiPost<any>("/api/analyze", {
+        ...payload,
+        goal,
+        language: languageName(language),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Analysis failed");
       setPreview({
         id: crypto.randomUUID(),
         name: data.name || "Meal",
