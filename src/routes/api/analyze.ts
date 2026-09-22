@@ -30,16 +30,27 @@ Respond ONLY with strict JSON (no markdown, no commentary) in this exact shape:
 
 If the image is unclear or not food, return name "Unknown", verdict "yellow", glintScore 0, and zeros for nutrition.`;
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+function json(data: unknown, status = 200) {
+  return Response.json(data, { status, headers: CORS });
+}
+
 export const Route = createFileRoute("/api/analyze")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       POST: async ({ request }: { request: Request }) => {
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) return json({ error: "Scan service is not configured on this host. Use glinttracker.lovable.app or set VITE_API_BASE." }, 500);
 
         const body = (await request.json()) as AnalyzeBody;
         if (!body.image && !body.text) {
-          return new Response("image or text required", { status: 400 });
+          return json({ error: "image or text required" }, 400);
         }
 
          const goalLine = body.goal ? `User's goal: ${body.goal}.` : "User has no specific goal — give balanced advice.";

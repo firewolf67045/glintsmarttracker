@@ -73,16 +73,27 @@ Respond ONLY with strict JSON (no markdown, no commentary) in this exact shape:
 Rules: VARIETY IS MANDATORY — across the 7 days use different cuisines, proteins (fish, poultry, eggs, legumes, lean red meat, tofu/dairy), grains and vegetables; never repeat the same dish name twice in the week. Each day's meal calories must sum to within 5% of targetCalories. Macros must be consistent with targetCalories (protein 4, carbs 4, fat 9 kcal/g). Descriptions are short, sensory and appetizing. Be realistic and never shame the user. If the photo is unclear or not a person, set confidence "low" and estimate from stats alone.`;
 
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+function json(data: unknown, status = 200) {
+  return Response.json(data, { status, headers: CORS });
+}
+
 export const Route = createFileRoute("/api/physique")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       POST: async ({ request }: { request: Request }) => {
         const key = process.env.LOVABLE_API_KEY;
-        if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
+        if (!key) return json({ error: "Scan service is not configured on this host. Use glinttracker.lovable.app or set VITE_API_BASE." }, 500);
 
         const body = (await request.json()) as PhysiqueBody;
         if (!body.age || !body.weightKg) {
-          return Response.json({ error: "Age and weight are required" }, { status: 400 });
+          return json({ error: "Age and weight are required" }, 400);
         }
 
         const stats = [

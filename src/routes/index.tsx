@@ -9,6 +9,7 @@ import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
 import { fetchMeals, removeMeal, saveMeal } from "@/lib/mealStore";
+import { apiPost } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   head: () => ({

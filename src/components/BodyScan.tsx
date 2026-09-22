@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Camera, Loader2, X, Plus, Activity, Flame, Dumbbell, Target, CheckCircle2, AlertCircle, Repeat, Droplets, ShoppingBasket, Trophy, Lightbulb, Cookie, PlusCircle } from "lucide-react";
+import { apiPost } from "@/lib/api";
 
 export type PlanMeal = {
   meal: string;
