@@ -177,13 +177,11 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     setError(null);
     setPreview(null);
     try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...payload, goal, language: languageName(language) }),
+      const data = await apiPost<Record<string, unknown>>("/api/analyze", {
+        ...payload,
+        goal,
+        language: languageName(language),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Analysis failed");
       setPreview({
         id: crypto.randomUUID(),
         name: data.name || "Meal",

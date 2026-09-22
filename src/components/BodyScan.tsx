@@ -120,22 +120,16 @@ export function BodyScan({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/physique", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          image,
-          age: Number(age),
-          weightKg: Number(weight),
-          heightCm: height ? Number(height) : undefined,
-          sex,
-          activity,
-          goal,
-           language,
-        }),
+      const data = await apiPost<BodyScanResult>("/api/physique", {
+        image,
+        age: Number(age),
+        weightKg: Number(weight),
+        heightCm: height ? Number(height) : undefined,
+        sex,
+        activity,
+        goal,
+        language,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Scan failed");
       setResult(data as BodyScanResult);
       try { localStorage.setItem(SCAN_KEY, JSON.stringify(data)); } catch {}
       onResult?.(data as BodyScanResult);
