@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Welcome } from "@/components/Welcome";
 import { BodyScan, loadSavedScan, type BodyScanResult } from "@/components/BodyScan";
 import { Assessment, ASSESSMENT_KEY, type AssessmentProfile } from "@/components/Assessment";
+import { fetchProfile, saveProfile } from "@/lib/profileStore";
 import { LanguageSelect } from "@/components/LanguageSelect";
 import { LANGUAGE_KEY, languageName, localeFor, translate, type Language } from "@/lib/i18n";
 import { fetchMeals, removeMeal, saveMeal } from "@/lib/mealStore";
@@ -111,16 +112,31 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
   const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const g = localStorage.getItem(GOAL_KEY);
-      if (g) setGoal(g);
-      setScan(loadSavedScan());
-      const savedProfile = localStorage.getItem(profileKey);
-      if (savedProfile) setProfile(JSON.parse(savedProfile));
-      else setShowAssessment(true);
-    } catch { setShowAssessment(true); }
-    finally { setAssessmentReady(true); }
-  }, []);
+    let active = true;
+    (async () => {
+      try {
+        const g = localStorage.getItem(GOAL_KEY);
+        if (g) setGoal(g);
+        setScan(loadSavedScan());
+        // Cloud first so the assessment follows the account across devices.
+        const cloudProfile = await fetchProfile(session.user.id);
+        if (!active) return;
+        if (cloudProfile) {
+          setProfile(cloudProfile);
+          try { localStorage.setItem(profileKey, JSON.stringify(cloudProfile)); } catch {}
+          return;
+        }
+        const savedProfile = localStorage.getItem(profileKey);
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile) as AssessmentProfile;
+          setProfile(parsed);
+          void saveProfile(session.user.id, parsed);
+        } else setShowAssessment(true);
+      } catch { setShowAssessment(true); }
+      finally { if (active) setAssessmentReady(true); }
+    })();
+    return () => { active = false; };
+  }, [session.user.id]);
 
   // Meals + photos live in the account, so they come back on every sign-in.
   useEffect(() => {
@@ -252,7 +268,10 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
     <div className="min-h-screen bg-gradient-hero pb-32" dir={language === "ar" ? "rtl" : "ltr"}>
       {assessmentReady && showAssessment && (
         <Assessment language={language} initial={profile} onComplete={(next) => {
-          setProfile(next); setGoal(next.goal); localStorage.setItem(profileKey, JSON.stringify(next)); setShowAssessment(false);
+          setProfile(next); setGoal(next.goal);
+          try { localStorage.setItem(profileKey, JSON.stringify(next)); } catch {}
+          void saveProfile(session.user.id, next);
+          setShowAssessment(false);
         }} />
       )}
       <header className="px-5 pt-7 pb-5 flex items-center justify-between max-w-2xl mx-auto">
