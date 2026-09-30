@@ -111,16 +111,31 @@ function GlintApp({ session, language, onLanguageChange }: { session: Session; l
   const cameraRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    try {
-      const g = localStorage.getItem(GOAL_KEY);
-      if (g) setGoal(g);
-      setScan(loadSavedScan());
-      const savedProfile = localStorage.getItem(profileKey);
-      if (savedProfile) setProfile(JSON.parse(savedProfile));
-      else setShowAssessment(true);
-    } catch { setShowAssessment(true); }
-    finally { setAssessmentReady(true); }
-  }, []);
+    let active = true;
+    (async () => {
+      try {
+        const g = localStorage.getItem(GOAL_KEY);
+        if (g) setGoal(g);
+        setScan(loadSavedScan());
+        // Cloud first so the assessment follows the account across devices.
+        const cloudProfile = await fetchProfile(session.user.id);
+        if (!active) return;
+        if (cloudProfile) {
+          setProfile(cloudProfile);
+          try { localStorage.setItem(profileKey, JSON.stringify(cloudProfile)); } catch {}
+          return;
+        }
+        const savedProfile = localStorage.getItem(profileKey);
+        if (savedProfile) {
+          const parsed = JSON.parse(savedProfile) as AssessmentProfile;
+          setProfile(parsed);
+          void saveProfile(session.user.id, parsed);
+        } else setShowAssessment(true);
+      } catch { setShowAssessment(true); }
+      finally { if (active) setAssessmentReady(true); }
+    })();
+    return () => { active = false; };
+  }, [session.user.id]);
 
   // Meals + photos live in the account, so they come back on every sign-in.
   useEffect(() => {
