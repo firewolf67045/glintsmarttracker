@@ -10,22 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiPhysiqueRouteImport } from './routes/api/physique'
 import { Route as ApiAnalyzeRouteImport } from './routes/api/analyze'
+import { Route as ApiPhysiqueRouteImport } from './routes/api/physique'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPhysiqueRoute = ApiPhysiqueRouteImport.update({
-  id: '/api/physique',
-  path: '/api/physique',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAnalyzeRoute = ApiAnalyzeRouteImport.update({
   id: '/api/analyze',
   path: '/api/analyze',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPhysiqueRoute = ApiPhysiqueRouteImport.update({
+  id: '/api/physique',
+  path: '/api/physique',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -68,18 +68,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/physique': {
-      id: '/api/physique'
-      path: '/api/physique'
-      fullPath: '/api/physique'
-      preLoaderRoute: typeof ApiPhysiqueRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/analyze': {
       id: '/api/analyze'
       path: '/api/analyze'
       fullPath: '/api/analyze'
       preLoaderRoute: typeof ApiAnalyzeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/physique': {
+      id: '/api/physique'
+      path: '/api/physique'
+      fullPath: '/api/physique'
+      preLoaderRoute: typeof ApiPhysiqueRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
