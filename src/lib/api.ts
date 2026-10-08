@@ -1,10 +1,7 @@
-// Base URL for scan endpoints. Locally and on the Lovable-hosted app this is
-// same-origin (""). On external hosts (e.g. Vercel) set VITE_API_BASE to the
-// hosted app URL (https://glinttracker.lovable.app) so scans use the working AI.
-const API_BASE = (
-  (import.meta.env.VITE_API_BASE as string | undefined) ??
-  "https://glinttracker.lovable.app"
-).replace(/\/$/, "");
+// All scans go to the hosted Glint scan service, which has the AI configured.
+// This is hardcoded on purpose so copies hosted elsewhere (e.g. Vercel) work
+// without any environment variable — a wrong/empty VITE_API_BASE can't break it.
+const API_BASE = "https://glinttracker.lovable.app";
 
 export async function apiPost<T = unknown>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -20,7 +17,7 @@ export async function apiPost<T = unknown>(path: string, body: unknown): Promise
     throw new Error(
       res.ok
         ? "Unexpected response from the scan service."
-        : `Scan service unavailable (${res.status}). Try the hosted app at glinttracker.lovable.app.`,
+        : `Scan service unavailable (${res.status}). Please try again in a moment.`,
     );
   }
   if (!res.ok) {
