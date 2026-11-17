@@ -12,10 +12,9 @@ For packaged foods, it can scan barcodes or read nutrition labels via OCR.
 
 This project was built by Franklin
 
-**Live app**: https://glintsmarttracker.lovable.app
+**Live app**: https://glintsmarttracker-tyza.vercel.app/
 
 
-Continue developing this project in the [Lovable edi
 
 ## Development
 
